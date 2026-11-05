@@ -1,0 +1,18 @@
+{
+  "name": "LOGISNAKE · Gestiona, resuelve y llega a la meta",
+  "short_name": "LOGISNAKE",
+  "description": "Juego educativo de tablero sobre procesos logísticos.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#170B2C",
+  "theme_color": "#170B2C",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

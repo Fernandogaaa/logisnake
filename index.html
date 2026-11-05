@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="es" data-skin="halloween">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LOGISNAKE · Gestiona, resuelve y llega a la meta</title>
+  <meta name="description" content="Juego educativo de tablero sobre procesos logísticos para estudiantes de Administración Industrial.">
+  <meta name="theme-color" content="#170B2C">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icono.svg">
+  <link rel="apple-touch-icon" href="icono-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- =================== Decoración de fondo (según el tema) =================== -->
+  <div id="decor" aria-hidden="true">
+    <div class="estrellas"></div>
+    <div class="luna"></div>
+    <div class="nieve"></div>
+    <div class="rejilla"></div>
+    <svg class="murcielago m1" viewBox="0 0 100 50"><path d="M50 18 C46 10 40 8 36 12 C30 4 16 2 2 10 C12 12 16 20 14 28 C20 22 28 24 32 30 C36 24 42 24 46 30 L50 26 L54 30 C58 24 64 24 68 30 C72 24 80 22 86 28 C84 20 88 12 98 10 C84 2 70 4 64 12 C60 8 54 10 50 18 Z"/></svg>
+    <svg class="murcielago m2" viewBox="0 0 100 50"><path d="M50 18 C46 10 40 8 36 12 C30 4 16 2 2 10 C12 12 16 20 14 28 C20 22 28 24 32 30 C36 24 42 24 46 30 L50 26 L54 30 C58 24 64 24 68 30 C72 24 80 22 86 28 C84 20 88 12 98 10 C84 2 70 4 64 12 C60 8 54 10 50 18 Z"/></svg>
+    <svg class="murcielago m3" viewBox="0 0 100 50"><path d="M50 18 C46 10 40 8 36 12 C30 4 16 2 2 10 C12 12 16 20 14 28 C20 22 28 24 32 30 C36 24 42 24 46 30 L50 26 L54 30 C58 24 64 24 68 30 C72 24 80 22 86 28 C84 20 88 12 98 10 C84 2 70 4 64 12 C60 8 54 10 50 18 Z"/></svg>
+    <svg class="calabaza c1" viewBox="0 0 120 100">
+      <path d="M58 18 Q56 6 66 2" stroke="#3E6B1F" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <ellipse cx="34" cy="58" rx="28" ry="36" fill="#E8701A"/><ellipse cx="86" cy="58" rx="28" ry="36" fill="#E8701A"/>
+      <ellipse cx="60" cy="58" rx="30" ry="40" fill="#FF8A1F"/>
+      <path d="M40 46 l10 -10 l10 10 Z M68 46 l10 -10 l10 10 Z" fill="#3a1600"/>
+      <path d="M36 66 Q60 90 86 66 l-8 6 l-6 -6 l-6 8 l-6 -8 l-6 8 l-6 -8 l-6 6 Z" fill="#3a1600"/>
+    </svg>
+    <svg class="calabaza c2" viewBox="0 0 120 100">
+      <path d="M58 18 Q56 6 66 2" stroke="#3E6B1F" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <ellipse cx="34" cy="58" rx="28" ry="36" fill="#E8701A"/><ellipse cx="86" cy="58" rx="28" ry="36" fill="#E8701A"/>
+      <ellipse cx="60" cy="58" rx="30" ry="40" fill="#FF8A1F"/>
+      <path d="M42 48 a7 7 0 1 0 14 0 Z M66 48 a7 7 0 1 0 14 0 Z" fill="#3a1600"/>
+      <path d="M44 70 Q60 82 78 70" stroke="#3a1600" stroke-width="6" fill="none" stroke-linecap="round"/>
+    </svg>
+    <svg class="pino p1" viewBox="0 0 100 130"><path d="M50 4 L80 50 H64 L90 88 H70 L96 120 H4 L30 88 H10 L36 50 H20 Z" fill="#1F7A3F"/><rect x="42" y="118" width="16" height="12" fill="#6B3E1F"/><circle cx="40" cy="60" r="5" fill="#E53935"/><circle cx="62" cy="86" r="5" fill="#FFD43B"/><circle cx="34" cy="104" r="5" fill="#3D8BFD"/><path d="M50 0 l4 8 h8 l-6 5 l2 8 l-8 -5 l-8 5 l2 -8 l-6 -5 h8 Z" fill="#FFD43B"/></svg>
+    <svg class="pino p2" viewBox="0 0 100 130"><path d="M50 4 L80 50 H64 L90 88 H70 L96 120 H4 L30 88 H10 L36 50 H20 Z" fill="#1A6B37"/><rect x="42" y="118" width="16" height="12" fill="#6B3E1F"/><circle cx="58" cy="44" r="5" fill="#FFD43B"/><circle cx="36" cy="80" r="5" fill="#E53935"/><circle cx="66" cy="106" r="5" fill="#fff"/></svg>
+    <svg class="engranaje g1" viewBox="0 0 100 100"><path d="M43 4h14l2 12 8 3 10-7 10 10-7 10 3 8 12 2v14l-12 2-3 8 7 10-10 10-10-7-8 3-2 12H43l-2-12-8-3-10 7-10-10 7-10-3-8-12-2V43l12-2 3-8-7-10 10-10 10 7 8-3z M50 34a16 16 0 1 0 0.1 0z"/></svg>
+    <svg class="engranaje g2" viewBox="0 0 100 100"><path d="M43 4h14l2 12 8 3 10-7 10 10-7 10 3 8 12 2v14l-12 2-3 8 7 10-10 10-10-7-8 3-2 12H43l-2-12-8-3-10 7-10-10 7-10-3-8-12-2V43l12-2 3-8-7-10 10-10 10 7 8-3z M50 34a16 16 0 1 0 0.1 0z"/></svg>
+    <div class="suelo"></div>
+  </div>
+
+  <main id="app">
+
+    <!-- =============================== PORTADA =============================== -->
+    <section id="pantalla-portada" class="pantalla activa" aria-labelledby="titulo-portada">
+      <div class="barra-sup">
+        <span class="chip-lema">📚 Aprende · 🧠 Estrategia · 🚀 Avanza</span>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica" aria-pressed="true">🎵</button>
+          <button class="btn-redondo btn-efectos" data-accion="efectos" aria-pressed="true">🔊</button>
+        </div>
+      </div>
+      <div class="portada-grid">
+        <div class="portada-mascota" data-mascota="flotar"></div>
+        <div class="portada-centro">
+          <h1 class="logo" id="titulo-portada"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></h1>
+          <p class="subtitulo">Gestiona, resuelve y llega a la meta</p>
+          <div class="menu-botones">
+            <button class="btn btn-grande btn-naranja" data-ir="modalidad">▶ Jugar</button>
+            <button class="btn btn-verde" data-ir="instrucciones">📖 Instrucciones</button>
+            <button class="btn btn-azul" data-accion="config">⚙️ Configuración</button>
+          </div>
+        </div>
+      </div>
+      <p class="pie-portada">🏆 ¡Demuestra tus habilidades en logística! · SENATI · Administración Industrial</p>
+    </section>
+
+    <!-- ========================= SELECCIÓN DE RECORRIDO ========================= -->
+    <section id="pantalla-modalidad" class="pantalla" hidden aria-labelledby="titulo-modalidad">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-modalidad">Selecciona el recorrido</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button>
+        </div>
+      </header>
+      <div class="tarjetas tarjetas-3">
+        <article class="tarjeta tarjeta-azul">
+          <h3>Recorrido integral</h3>
+          <p>Recorre las 5 etapas de la cadena logística, de las compras a la entrega.</p>
+          <div class="tarjeta-ilustracion" aria-hidden="true">🛒📥🏭📦🚚</div>
+          <span class="tarjeta-dato">⭐ 50 casillas · 5 etapas</span>
+          <button class="btn btn-azul tarjeta-btn" data-accion="modalidad" data-modo="integral">Seleccionar</button>
+        </article>
+        <article class="tarjeta tarjeta-verde">
+          <h3>Por categoría o etapa</h3>
+          <p>Enfócate en una sola etapa del proceso logístico.</p>
+          <div class="tarjeta-ilustracion" aria-hidden="true">📋📦</div>
+          <span class="tarjeta-dato">⭐ 30 casillas · 1 etapa</span>
+          <button class="btn btn-verde tarjeta-btn" data-accion="modalidad" data-modo="etapa">Seleccionar</button>
+        </article>
+        <article class="tarjeta tarjeta-morado">
+          <h3>Recorrido libre o personalizado</h3>
+          <p>El docente configura su propio tema y sus preguntas.</p>
+          <div class="tarjeta-ilustracion" aria-hidden="true">💻✏️</div>
+          <span class="tarjeta-dato">⭐ 30 casillas · tus preguntas</span>
+          <div class="tarjeta-acciones">
+            <button class="btn btn-morado tarjeta-btn" data-accion="modalidad" data-modo="personalizado">Seleccionar</button>
+            <button class="btn btn-gris btn-chico" data-accion="editar-preguntas">✏️ Editar preguntas</button>
+          </div>
+        </article>
+      </div>
+      <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="portada">⬅ Atrás</button></div>
+    </section>
+
+    <!-- ========================= FORMA DE PARTICIPACIÓN ========================= -->
+    <section id="pantalla-participacion" class="pantalla" hidden aria-labelledby="titulo-participacion">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-participacion">Forma de participación</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button>
+        </div>
+      </header>
+      <div class="tarjetas tarjetas-2">
+        <article class="tarjeta tarjeta-azul">
+          <h3>Dirigido por el docente</h3>
+          <p>Una sola pantalla proyectada. El docente controla el juego y marca la alternativa que dice cada equipo.</p>
+          <div class="tarjeta-ilustracion" aria-hidden="true">👩‍🏫📽️</div>
+          <button class="btn btn-azul tarjeta-btn" data-accion="docente">Seleccionar</button>
+        </article>
+        <article class="tarjeta tarjeta-morado deshabilitada" aria-disabled="true">
+          <span class="cinta">Próximamente</span>
+          <h3>Multijugador en línea</h3>
+          <p>Cada equipo se une a una sala desde su dispositivo con un código.</p>
+          <div class="tarjeta-ilustracion" aria-hidden="true">📱📶</div>
+          <button class="btn btn-morado tarjeta-btn" disabled>Próximamente</button>
+        </article>
+      </div>
+      <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="modalidad">⬅ Atrás</button></div>
+    </section>
+
+    <!-- ========================= PREPARACIÓN DE EQUIPOS ========================= -->
+    <section id="pantalla-equipos" class="pantalla" hidden aria-labelledby="titulo-equipos">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-equipos">Preparación de equipos</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button>
+        </div>
+      </header>
+      <div class="equipos-config panel">
+        <span>¿Cuántos equipos?</span>
+        <div class="cfg-opciones" id="n-equipos" role="group" aria-label="Número de equipos">
+          <button class="chip-opcion" data-n="2" aria-pressed="true">2 equipos</button>
+          <button class="chip-opcion" data-n="3" aria-pressed="false">3 equipos</button>
+          <button class="chip-opcion" data-n="4" aria-pressed="false">4 equipos</button>
+        </div>
+      </div>
+      <div class="equipos-tarjetas" id="equipos-tarjetas"></div>
+      <div class="orden-panel panel">
+        <div class="orden-titulo">🎲 Orden de turnos</div>
+        <div class="orden-turnos" id="orden-turnos"></div>
+        <button class="btn btn-morado btn-chico" data-accion="sortear">🔀 Sortear orden</button>
+      </div>
+      <div class="pie-nav">
+        <button class="btn btn-naranja btn-chico" data-ir="participacion">⬅ Volver</button>
+        <button class="btn btn-verde btn-grande" data-accion="comenzar">✔ ¡Comenzar juego!</button>
+      </div>
+    </section>
+
+    <!-- ================================ TABLERO ================================ -->
+    <section id="pantalla-juego" class="pantalla" hidden aria-labelledby="titulo-juego">
+      <header class="cabecera cabecera-juego">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="visualmente-oculto" id="titulo-juego">Tablero de juego</h2>
+        <div class="cartel-etapa" id="cartel-etapa" aria-live="polite"></div>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo btn-efectos" data-accion="efectos">🔊</button>
+          <button class="btn-redondo" data-accion="config" aria-label="Configuración" title="Configuración">⚙️</button>
+          <button class="btn-redondo btn-inicio" data-accion="inicio" aria-label="Inicio (salir de la partida)" title="Inicio">🏠</button>
+        </div>
+      </header>
+      <div class="juego-grid">
+        <aside class="panel marcador" id="marcador" aria-label="Marcador"></aside>
+        <div class="tablero-contenedor" id="tablero-contenedor"></div>
+        <aside class="panel panel-acciones" aria-label="Acciones del turno">
+          <div class="turno-equipo" id="turno-equipo" aria-live="polite"></div>
+          <div class="ronda" id="ronda"></div>
+          <div class="dado-zona">
+            <div class="dado" id="dado" aria-label="Dado"></div>
+            <div class="dado-texto" id="dado-texto">Lanza el dado</div>
+          </div>
+          <button class="btn btn-naranja btn-grande" id="btn-tirar" data-accion="tirar">🎲 ¡Tirar!</button>
+          <button class="btn btn-morado" id="btn-relampago" data-accion="relampago">⚡ Pregunta relámpago</button>
+          <p class="ayuda" id="relampago-ayuda"></p>
+          <div class="leyenda-zona" id="leyenda"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============================ JUEGO TERMINADO ============================ -->
+    <section id="pantalla-fin" class="pantalla" hidden aria-labelledby="titulo-fin">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-fin">¡Juego terminado!</h2>
+        <div class="barra-botones"><button class="btn-redondo btn-musica" data-accion="musica">🎵</button></div>
+      </header>
+      <p class="fin-subtitulo" id="fin-subtitulo"></p>
+      <div class="fin-grid">
+        <div class="podio" id="podio"></div>
+        <div class="panel repaso-panel">
+          <h3>📘 Para repasar</h3>
+          <p class="nota">Preguntas más falladas, con su respuesta correcta y explicación.</p>
+          <div id="repaso"></div>
+        </div>
+      </div>
+      <div class="pie-nav">
+        <button class="btn btn-verde" data-accion="menu">🏠 Volver al menú</button>
+        <button class="btn btn-naranja" data-accion="jugar-de-nuevo">🔁 Jugar de nuevo</button>
+      </div>
+    </section>
+
+    <!-- ============================== INSTRUCCIONES ============================== -->
+    <section id="pantalla-instrucciones" class="pantalla" hidden aria-labelledby="titulo-instrucciones">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-instrucciones">Instrucciones</h2>
+        <div class="barra-botones"><button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button></div>
+      </header>
+      <div class="instrucciones">
+        <div class="panel inst-bloque">
+          <h3>🎯 Objetivo</h3>
+          <p>De 2 a 4 equipos avanzan por el tablero respondiendo preguntas sobre procesos logísticos. <strong>Gana el primer equipo que llega a la META</strong> sin haber sido eliminado (no hace falta sacar el número exacto).</p>
+        </div>
+        <div class="panel inst-bloque">
+          <h3>🎲 Tu turno</h3>
+          <ul>
+            <li><strong>Tira el dado</strong> (1–6): tu ficha avanza y respondes la pregunta de la casilla donde cae.</li>
+            <li>O, si tienes <strong>5 puntos o más</strong>, canjéalos por una <strong>⚡ Pregunta relámpago</strong>.</li>
+            <li>Cada equipo empieza con <strong>0 puntos y 3 vidas ❤️❤️❤️</strong>. Con 0 vidas queda eliminado.</li>
+            <li>Si se acaba el tiempo, cuenta como respuesta incorrecta.</li>
+          </ul>
+        </div>
+        <div class="panel inst-bloque inst-tabla">
+          <h3>🗺️ Casillas</h3>
+          <table>
+            <thead><tr><th>Casilla</th><th>Si aciertas</th><th>Si fallas</th></tr></thead>
+            <tbody>
+              <tr><td>⬜ Normal</td><td>+1 punto</td><td>−1 vida</td></tr>
+              <tr><td>🎁 Cofre del tesoro</td><td>Eliges: <b>Avance estratégico</b> (avanzas 3) o <b>Ataque estratégico</b> (un rival retrocede 3)</td><td>−1 vida, sin recompensa</td></tr>
+              <tr><td>⚠️ Alerta logística</td><td>+1 punto</td><td>−1 vida y retrocedes 2</td></tr>
+              <tr><td>🔍 Auditoría sorpresa</td><td>+2 puntos</td><td>−1 vida</td></tr>
+              <tr><td>⚡ Pregunta relámpago<br><small>(canje de 5 puntos)</small></td><td>Avanzas 3 casillas</td><td>Pierdes los 5 puntos, pero no pierdes vida</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel inst-bloque">
+          <h3>📌 Reglas especiales</h3>
+          <ul>
+            <li>Los movimientos por cofre, alerta o relámpago <strong>no activan</strong> la casilla donde cae la ficha.</li>
+            <li>Solo puedes atacar a un rival que siga en juego y que no esté en el INICIO. Nadie retrocede antes del INICIO.</li>
+            <li>Si <strong>todos</strong> los equipos quedan eliminados, gana el que tenga más puntos (empate: el más avanzado).</li>
+            <li>En cada pregunta se indica quién responde: el <strong>representante de la etapa</strong> de la casilla.</li>
+          </ul>
+        </div>
+        <div class="panel inst-bloque">
+          <h3>⌨️ Atajos para el docente</h3>
+          <ul>
+            <li><kbd>A</kbd>–<kbd>D</kbd> o <kbd>1</kbd>–<kbd>4</kbd>: elegir alternativa.</li>
+            <li><kbd>Enter</kbd>: continuar después del resultado / tirar el dado.</li>
+            <li><kbd>Esc</kbd>: cerrar ventanas de configuración o confirmación.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="portada">⬅ Atrás</button><button class="btn btn-verde" data-ir="modalidad">▶ ¡A jugar!</button></div>
+    </section>
+
+    <!-- ================================ EDITOR ================================ -->
+    <section id="pantalla-editor" class="pantalla" hidden aria-labelledby="titulo-editor">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-editor">Editor de preguntas</h2>
+        <div class="barra-botones"><button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button></div>
+      </header>
+      <div id="editor-contenido"></div>
+      <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="modalidad">⬅ Volver a recorridos</button></div>
+    </section>
+
+  </main>
+
+  <div id="toasts" aria-live="polite"></div>
+  <div id="confeti" aria-hidden="true"></div>
+
+  <script src="preguntas.js"></script>
+  <script src="game.js"></script>
+  <script src="audio.js"></script>
+  <script src="board.js"></script>
+  <script src="ui.js"></script>
+  <script src="editor.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

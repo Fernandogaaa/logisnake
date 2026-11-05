@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs><radialGradient id="f" cx="50%" cy="30%" r="75%"><stop offset="0" stop-color="#3D1B6E"/><stop offset="1" stop-color="#170B2C"/></radialGradient></defs>
+  <rect width="512" height="512" rx="110" fill="url(#f)"/>
+  <circle cx="400" cy="110" r="46" fill="#FFE9A6"/>
+  <path d="M120 420 C 60 380, 90 300, 170 310 C 250 320, 270 250, 230 210" fill="none" stroke="#145c28" stroke-width="70" stroke-linecap="round"/>
+  <path d="M120 420 C 60 380, 90 300, 170 310 C 250 320, 270 250, 230 210" fill="none" stroke="#34B653" stroke-width="54" stroke-linecap="round"/>
+  <ellipse cx="270" cy="180" rx="118" ry="92" fill="#1E7A35"/>
+  <ellipse cx="270" cy="180" rx="106" ry="80" fill="#4CD964"/>
+  <ellipse cx="232" cy="160" rx="30" ry="34" fill="#fff"/><ellipse cx="310" cy="160" rx="30" ry="34" fill="#fff"/>
+  <circle cx="238" cy="166" r="15" fill="#1b1b2f"/><circle cx="316" cy="166" r="15" fill="#1b1b2f"/>
+  <circle cx="243" cy="160" r="5" fill="#fff"/><circle cx="321" cy="160" r="5" fill="#fff"/>
+  <path d="M236 212 Q270 240 306 212" fill="none" stroke="#14532d" stroke-width="9" stroke-linecap="round"/>
+  <ellipse cx="268" cy="104" rx="128" ry="22" fill="#2A1450"/>
+  <path d="M200 104 L262 -6 Q276 -20 284 0 L330 104 Z" fill="#4B2A86" transform="translate(0,6)"/>
+  <rect x="206" y="84" width="122" height="20" fill="#FF8A1F"/>
+  <text x="256" y="490" font-family="Arial Black, Arial, sans-serif" font-size="58" font-weight="900" text-anchor="middle" fill="#FF8A1F" stroke="#3E1B7A" stroke-width="6" paint-order="stroke">LOGISNAKE</text>
+</svg>
