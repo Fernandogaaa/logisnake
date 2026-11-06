@@ -66,6 +66,8 @@
             <button class="btn btn-grande btn-naranja" data-ir="modalidad">▶ Jugar</button>
             <button class="btn btn-verde" data-ir="instrucciones">📖 Instrucciones</button>
             <button class="btn btn-azul" data-accion="config">⚙️ Configuración</button>
+            <button class="btn btn-morado btn-chico solo-online" data-accion="unirse-sala" hidden>📱 Unirse a una sala</button>
+            <button class="btn btn-gris btn-chico" id="btn-volver-sala" data-accion="volver-sala" hidden>🔄 Volver a la sala <span></span></button>
           </div>
         </div>
       </div>
@@ -128,12 +130,13 @@
           <div class="tarjeta-ilustracion" aria-hidden="true">👩‍🏫📽️</div>
           <button class="btn btn-azul tarjeta-btn" data-accion="docente">Seleccionar</button>
         </article>
-        <article class="tarjeta tarjeta-morado deshabilitada" aria-disabled="true">
-          <span class="cinta">Próximamente</span>
+        <article class="tarjeta tarjeta-morado deshabilitada" id="tarjeta-online" aria-disabled="true">
+          <span class="cinta" id="online-cinta">No disponible</span>
           <h3>Multijugador en línea</h3>
-          <p>Cada equipo se une a una sala desde su dispositivo con un código.</p>
+          <p>Cada equipo se une a una sala desde su celular con un código. El docente proyecta el tablero.</p>
           <div class="tarjeta-ilustracion" aria-hidden="true">📱📶</div>
-          <button class="btn btn-morado tarjeta-btn" disabled>Próximamente</button>
+          <p class="nota-config" id="online-sin-config">Configura Firebase para activar este modo. <a href="README.md#6-activar-el-modo-en-línea" target="_blank" rel="noopener">Ver instrucciones</a></p>
+          <button class="btn btn-morado tarjeta-btn" id="btn-online" data-accion="online" disabled>Seleccionar</button>
         </article>
       </div>
       <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="modalidad">⬅ Atrás</button></div>
@@ -174,6 +177,7 @@
       <header class="cabecera cabecera-juego">
         <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
         <h2 class="visualmente-oculto" id="titulo-juego">Tablero de juego</h2>
+        <span class="sala-badge" id="sala-badge" hidden></span>
         <div class="cartel-etapa" id="cartel-etapa" aria-live="polite"></div>
         <div class="barra-botones">
           <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
@@ -195,6 +199,7 @@
           <button class="btn btn-naranja btn-grande" id="btn-tirar" data-accion="tirar">🎲 ¡Tirar!</button>
           <button class="btn btn-morado" id="btn-relampago" data-accion="relampago">⚡ Pregunta relámpago</button>
           <p class="ayuda" id="relampago-ayuda"></p>
+          <div class="online-aviso" id="online-aviso" hidden aria-live="polite"></div>
           <div class="leyenda-zona" id="leyenda"></div>
         </aside>
       </div>
@@ -288,7 +293,52 @@
       <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="modalidad">⬅ Volver a recorridos</button></div>
     </section>
 
+    <!-- ======================== SALA DE JUEGO (en línea) ======================== -->
+    <section id="pantalla-sala" class="pantalla" hidden aria-labelledby="titulo-sala">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-sala">Sala de juego</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo" data-ir="portada" aria-label="Ir al inicio" title="Inicio">🏠</button>
+        </div>
+      </header>
+      <div id="sala-contenido"></div>
+      <div class="pie-nav"><button class="btn btn-naranja btn-chico" data-ir="participacion">⬅ Atrás</button></div>
+    </section>
+
+    <!-- ================================ LOBBY ================================ -->
+    <section id="pantalla-lobby" class="pantalla" hidden aria-labelledby="titulo-lobby">
+      <header class="cabecera">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="cartel" id="titulo-lobby">Sala de espera</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo btn-efectos" data-accion="efectos">🔊</button>
+        </div>
+      </header>
+      <div id="lobby-contenido"></div>
+    </section>
+
+    <!-- ===================== CONTROL REMOTO (celular del equipo) ===================== -->
+    <section id="pantalla-control" class="pantalla" hidden aria-labelledby="titulo-control">
+      <header class="cabecera cabecera-control">
+        <div class="logo-mini"><span class="logo-logi">LOGI</span><span class="logo-snake">SNAKE</span></div>
+        <h2 class="visualmente-oculto" id="titulo-control">Control del equipo</h2>
+        <div class="barra-botones">
+          <button class="btn-redondo btn-musica" data-accion="musica">🎵</button>
+          <button class="btn-redondo btn-efectos" data-accion="efectos">🔊</button>
+          <button class="btn-redondo" data-c="salir" aria-label="Salir de la sala" title="Salir de la sala">🚪</button>
+        </div>
+      </header>
+      <div id="control-contenido" class="control"></div>
+    </section>
+
   </main>
+
+  <div class="espera-anfitrion" id="espera-anfitrion" hidden role="status">
+    <div class="panel"><div class="espera-icono">⏳</div><h2>Esperando al anfitrión…</h2><p>La partida está en pausa. Continuará cuando el anfitrión vuelva a conectarse.</p></div>
+  </div>
 
   <div id="toasts" aria-live="polite"></div>
   <div id="confeti" aria-hidden="true"></div>
@@ -299,6 +349,9 @@
   <script src="board.js"></script>
   <script src="ui.js"></script>
   <script src="editor.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="online.js"></script>
+  <script src="sala.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

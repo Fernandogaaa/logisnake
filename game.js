@@ -429,6 +429,7 @@
    *   { tipo:'COFRE_AVANCE' }
    *   { tipo:'COFRE_ATAQUE', rival: índice }
    *   { tipo:'CONTINUAR' }
+   *   { tipo:'SALTAR_TURNO' }        (solo modo en línea)
    */
   function reducir(estadoPrevio, accion) {
     if (!accion || !accion.tipo) return estadoPrevio;
@@ -463,6 +464,10 @@
         break;
       case 'CONTINUAR':
         if (prev.fase !== 'resultado' || (prev.resultado && prev.resultado.pendienteCofre)) return prev;
+        break;
+      case 'SALTAR_TURNO':
+        // Modo en línea: el anfitrión salta el turno de un equipo sin dispositivo conectado.
+        if (prev.fase !== 'turno') return prev;
         break;
       default:
         return prev;
@@ -593,6 +598,13 @@
         estado.resultado.cofre = { accion: 'ataque', rival: accion.rival };
         estado.resultado.mensajes.push('Ataque estratégico: ' + rival.nombre + ' retrocede ' + REGLAS.ATAQUE_COFRE + ' casillas');
         eventos.push({ tipo: 'ataque', equipo: turno, rival: accion.rival });
+        break;
+      }
+
+      case 'SALTAR_TURNO': {
+        eventos.push({ tipo: 'saltado', equipo: turno });
+        siguienteTurno(estado);
+        eventos.push({ tipo: 'turno', equipo: equipoDeTurno(estado) });
         break;
       }
 

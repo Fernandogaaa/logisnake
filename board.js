@@ -64,7 +64,7 @@
     colocarFichas(true);
     if (observador) observador.disconnect();
     if (root.ResizeObserver) {
-      observador = new ResizeObserver(function () { redimensionar(); });
+      observador = new ResizeObserver(function () { requestAnimationFrame(redimensionar); });
       observador.observe(contenedor);
     }
   }

@@ -246,6 +246,39 @@
    */
   var crono = { id: null };
 
+  /**
+   * Temporizador sincronizado con el reloj del servidor (modo en línea).
+   * reloj: { inicio: ms del servidor, duracion: segundos (0 = sin límite) }
+   * ahora(): hora estimada del servidor. gracia: ms extra antes de dar por agotado.
+   */
+  function iniciarTemporizadorServidor(reloj, ahora, cont, alAgotar, gracia) {
+    detenerTemporizador();
+    if (!cont) return;
+    if (!reloj || !reloj.duracion) { cont.classList.add('sin-limite'); return; }
+    var total = reloj.duracion * 1000;
+    var fin = reloj.inicio + total;
+    var circ = 2 * Math.PI * 26;
+    var ultimoTic = null;
+    function pintar() {
+      var restante = Math.max(0, fin - ahora());
+      var s = Math.ceil(restante / 1000);
+      var num = $('.temp-num', cont), arco = $('.temp-arco', cont);
+      if (num) num.textContent = s;
+      if (arco) arco.style.strokeDashoffset = (circ * (1 - restante / total)).toFixed(1);
+      cont.classList.toggle('alerta', s <= 5);
+      root.AudioJuego.urgente(s < 10 && s > 0);
+      if (s <= 5 && s > 0 && s !== ultimoTic) { ultimoTic = s; root.AudioJuego.efecto('tic'); }
+      return fin - ahora();
+    }
+    pintar();
+    crono.id = setInterval(function () {
+      if (pintar() <= -(gracia || 0)) {
+        detenerTemporizador();
+        if (alAgotar) alAgotar();
+      }
+    }, 150);
+  }
+
   function iniciarTemporizador(segundos, modal, alAgotar) {
     detenerTemporizador();
     var cont = $('.temporizador', modal.el);
@@ -314,6 +347,7 @@
     // Marcador
     var perdidas = {};
     (opciones.vidasPerdidas || []).forEach(function (i) { perdidas[i] = true; });
+    var conexion = opciones.conexion || null;
     $('#marcador').innerHTML = '<h2 class="panel-titulo">Equipos</h2>' + estado.orden.map(function (i) {
       var e = estado.equipos[i];
       var etiqueta = e.enMeta ? '<span class="tag tag-meta">🏆 En META</span>'
@@ -322,7 +356,7 @@
       return '<div class="equipo-fila' + (i === turno && estado.fase !== 'fin' ? ' de-turno' : '') + (e.eliminado ? ' eliminado' : '') + '" style="--color:' + e.color + '">' +
         fichaHTML(e) +
         '<div class="equipo-datos">' +
-        '<div class="equipo-nombre">' + esc(e.nombre) + '</div>' +
+        '<div class="equipo-nombre">' + esc(e.nombre) + (conexion ? conexionHTML(conexion[i]) : '') + '</div>' +
         '<div class="equipo-stats"><span class="pts">⭐ ' + e.puntos + ' pts</span>' + corazones(e.vidas, G.REGLAS.VIDAS_INICIALES, perdidas[i]) + '</div>' +
         '<div class="equipo-pos">Casilla ' + e.pos + ' ' + etiqueta + '</div>' +
         '</div></div>';
@@ -333,15 +367,27 @@
       '<div class="turno-mini">⭐ ' + eqT.puntos + ' · ' + corazones(eqT.vidas, 3) + '</div></div>';
     $('#turno-equipo').style.setProperty('--color', eqT.color);
     $('#ronda').textContent = 'Ronda ' + estado.ronda;
-    actualizarControles(estado, false);
+    actualizarControles(estado, !!opciones.ocupado);
   }
+
+  /** Indicador de conexión de un equipo (modo en línea). */
+  function conexionHTML(c) {
+    if (c === 'online') return ' <span class="conexion conexion-on" title="Dispositivo conectado">📶</span>';
+    if (c === 'offline') return ' <span class="conexion conexion-off" title="Dispositivo desconectado">⚠️ desconectado</span>';
+    if (c === 'anfitrion') return ' <span class="conexion conexion-host" title="Lo controla el anfitrión">🖥️</span>';
+    return '';
+  }
+
+  // Permiso para controlar al equipo de turno desde esta pantalla (en línea: solo si lo controla el anfitrión).
+  var permiso = function () { return true; };
+  function ponerPermiso(fn) { permiso = fn || function () { return true; }; }
 
   function actualizarControles(estado, ocupado) {
     var btnDado = $('#btn-tirar'), btnRel = $('#btn-relampago');
     if (!btnDado) return;
-    var puede = !!estado && estado.fase === 'turno' && !ocupado;
-    btnDado.disabled = !puede;
     var turno = estado ? G.equipoDeTurno(estado) : 0;
+    var puede = !!estado && estado.fase === 'turno' && !ocupado && permiso(turno);
+    btnDado.disabled = !puede;
     var pts = estado ? estado.equipos[turno].puntos : 0;
     btnRel.disabled = !puede || pts < G.REGLAS.COSTO_RELAMPAGO;
     $('#relampago-ayuda').textContent = pts >= G.REGLAS.COSTO_RELAMPAGO
@@ -367,7 +413,13 @@
 
   var LETRAS = ['A', 'B', 'C', 'D'];
 
-  function abrirPregunta(estado, alResponder) {
+  /**
+   * opciones (modo en línea): { soloLectura, reloj, ahora, gracia }
+   *   soloLectura: la pregunta se muestra pero se responde desde el dispositivo del equipo.
+   *   reloj/ahora: temporizador sincronizado con el servidor.
+   */
+  function abrirPregunta(estado, alResponder, op) {
+    op = op || {};
     var p = estado.preguntaActual;
     var e = estado.equipos[p.equipo];
     var info = G.TIPOS_CASILLA[p.tipo];
@@ -389,6 +441,7 @@
         return '<button class="opcion opcion-' + i + '" data-op="' + i + '"><span class="opcion-letra">' + LETRAS[i] + '</span><span class="opcion-texto">' + esc(o.texto) + '</span></button>';
       }).join('') + '</div>' +
       '<div class="en-juego">🎯 ' + esc(p.enJuego) + '</div>' +
+      '<p class="nota-remota" hidden>📱 ' + esc(e.nombre) + ' responde desde su dispositivo.</p>' +
       '<p class="atajos">Atajos: teclas <kbd>A</kbd>–<kbd>D</kbd> o <kbd>1</kbd>–<kbd>4</kbd></p>';
     var m = abrirModal({ html: html, clase: 'modal-pregunta tipo-' + p.tipo, etiqueta: 'Pregunta', cerrable: false });
     var respondido = false;
@@ -401,12 +454,23 @@
     }
     m.el.addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-op]');
-      if (b) responder(Number(b.dataset.op));
+      if (b && !m.soloLectura) responder(Number(b.dataset.op));
     });
     m.responder = function (i) { if (i < p.opciones.length) responder(i); };
     m.esPregunta = true;
-    var cfgTiempo = root.LogiConfig ? root.LogiConfig.get().tiempo : estado.config.tiempo;
-    iniciarTemporizador(cfgTiempo, m, function () { responder(-1); });
+    m.setSoloLectura = function (si) {
+      m.soloLectura = !!si;
+      m.el.classList.toggle('solo-lectura', m.soloLectura);
+      $('.nota-remota', m.el).hidden = !m.soloLectura;
+      if (!respondido) $$('.opcion', m.el).forEach(function (b) { b.disabled = m.soloLectura; });
+    };
+    m.setSoloLectura(op.soloLectura);
+    if (op.reloj) {
+      iniciarTemporizadorServidor(op.reloj, op.ahora, $('.temporizador', m.el), function () { responder(-1); }, op.gracia);
+    } else {
+      var cfgTiempo = root.LogiConfig ? root.LogiConfig.get().tiempo : estado.config.tiempo;
+      iniciarTemporizador(cfgTiempo, m, function () { responder(-1); });
+    }
     return m;
   }
 
@@ -432,7 +496,9 @@
   /**
    * acciones: { continuar(), avance(), ataque(rival) }
    */
-  function abrirResultado(estado, acciones) {
+  function abrirResultado(estado, acciones, op) {
+    op = op || {};
+    var controlCofre = op.controlCofre !== false;
     var r = estado.resultado;
     var e = estado.equipos[r.equipo];
     var html;
@@ -452,7 +518,10 @@
         '<ul class="res-efectos">' + r.mensajes.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
         (!r.correcto ? '<div class="res-correcta"><small>Respuesta correcta</small>' + esc(r.correctaTexto) + '</div>' : '') +
         (r.explicacion ? '<div class="res-explicacion"><strong>📘 Explicación</strong><p>' + esc(r.explicacion) + '</p></div>' : '');
-      if (r.pendienteCofre) {
+      if (r.pendienteCofre && !controlCofre) {
+        html += '<div class="cofre-eleccion"><h3>🎁 ' + esc(e.nombre) + ' está eligiendo su recompensa…</h3>' +
+          '<p class="nota">Avance estratégico o ataque estratégico, desde su dispositivo.</p></div>';
+      } else if (r.pendienteCofre) {
         html += '<div class="cofre-eleccion"><h3>🎁 Elige tu recompensa</h3><div class="cofre-opciones">' +
           '<button class="btn btn-verde btn-principal" data-avance>🚀 Avance estratégico<small>Avanzas 3 casillas</small></button>' +
           (r.rivales.length
@@ -469,10 +538,16 @@
     var m = abrirModal({ html: html, clase: 'modal-resultado ' + (r.correcto ? 'es-ok' : 'es-mal'), etiqueta: 'Resultado', cerrable: false });
     var usado = false;
     function una(fn) { return function () { if (usado) return; usado = true; fn.apply(null, arguments); }; }
+    // Acciones protegidas (una sola vez), también usadas por el modo en línea.
+    m.accion = {
+      continuar: una(acciones.continuar),
+      avance: una(acciones.avance),
+      ataque: una(acciones.ataque)
+    };
     m.el.addEventListener('click', function (ev) {
       var t = ev.target;
-      if (t.closest('[data-continuar]')) una(acciones.continuar)();
-      else if (t.closest('[data-avance]')) una(acciones.avance)();
+      if (t.closest('[data-continuar]')) m.accion.continuar();
+      else if (t.closest('[data-avance]')) m.accion.avance();
       else if (t.closest('[data-ataque]')) {
         $('.cofre-opciones', m.el).hidden = true;
         $('.rivales', m.el).hidden = false;
@@ -481,7 +556,7 @@
         $('.cofre-opciones', m.el).hidden = false;
         $('.rivales', m.el).hidden = true;
       } else if (t.closest('[data-rival]')) {
-        una(acciones.ataque)(Number(t.closest('[data-rival]').dataset.rival));
+        m.accion.ataque(Number(t.closest('[data-rival]').dataset.rival));
       }
     });
     m.esResultado = true;
@@ -510,7 +585,8 @@
         '<div class="podio-base"><span>' + (k + 1) + '°</span></div>' +
         '</div>';
     }).join('');
-    var repaso = G.preguntasParaRepasar(estado, 6);
+    // En línea, el anfitrión publica la lista ya calculada (los jugadores no tienen el banco).
+    var repaso = fin.repaso || G.preguntasParaRepasar(estado, 6);
     $('#repaso').innerHTML = repaso.length
       ? repaso.map(function (r) {
         var p = r.pregunta;
@@ -544,8 +620,9 @@
     abrirModal: abrirModal, modalSuperior: modalSuperior, cerrarTodos: cerrarTodos,
     confirmar: confirmar, aviso: aviso, toast: toast,
     mascotaSVG: mascotaSVG, caraDado: caraDado, animarDado: animarDado,
-    detenerTemporizador: detenerTemporizador,
+    detenerTemporizador: detenerTemporizador, iniciarTemporizadorServidor: iniciarTemporizadorServidor,
     renderJuego: renderJuego, actualizarControles: actualizarControles, leyendaHTML: leyendaHTML,
+    ponerPermiso: ponerPermiso, conexionHTML: conexionHTML,
     abrirPregunta: abrirPregunta, feedbackPregunta: feedbackPregunta, abrirResultado: abrirResultado,
     renderFin: renderFin, confeti: confeti
   };

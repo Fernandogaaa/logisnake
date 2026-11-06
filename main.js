@@ -214,8 +214,8 @@
 
   /* ------------------------------ Partida ------------------------------ */
 
-  function bancoSegunModo() {
-    if (app.modo === 'personalizado') return root.Editor.obtener().preguntas;
+  function bancoSegunModo(modo) {
+    if ((modo || app.modo) === 'personalizado') return root.Editor.obtener().preguntas;
     return root.PREGUNTAS || [];
   }
 
@@ -230,19 +230,148 @@
       }),
       orden: app.orden.slice()
     };
-    c.banco = bancoSegunModo();
+    c.banco = bancoSegunModo(c.modo);
     c.semilla = Math.floor(Math.random() * 4294967295);
     app.ultimaConfig = c;
     dispatch({ tipo: 'INICIAR', config: c });
   }
 
-  /** Punto único de cambio de estado (ver nota de la Fase 2 arriba). */
+  /**
+   * Punto único de cambio de estado.
+   * En línea, el anfitrión publica el nuevo estado (sin respuestas) después de cada acción.
+   */
   function dispatch(accion) {
     var nuevo = G.reducir(app.estado, accion);
     if (nuevo === app.estado) return false;
     app.estado = nuevo;
+    if (root.Sala) root.Sala.alDispatch(nuevo);
     alCambiar(nuevo, accion);
     return true;
+  }
+
+  /* ------------------------ Apoyo al modo en línea ------------------------ */
+
+  function enLinea() { return !!(root.Sala && root.Sala.activo()); }
+
+  /** Dibuja marcador y panel, con indicadores de conexión si la partida es en línea. */
+  function render(est, extra) {
+    var op = Object.assign({ ocupado: app.ocupado }, extra || {});
+    if (enLinea()) op.conexion = root.Sala.conexion();
+    UI.renderJuego(est, op);
+    renderAvisoOnline(est);
+  }
+
+  function renderAvisoOnline(est) {
+    var badge = $('#sala-badge'), aviso = $('#online-aviso');
+    if (!badge || !aviso) return;
+    if (!enLinea() || !est) { badge.hidden = true; aviso.hidden = true; return; }
+    badge.hidden = false;
+    badge.innerHTML = '🔑 Sala <strong>' + root.Sala.codigo() + '</strong>';
+    var turno = G.equipoDeTurno(est);
+    var e = est.equipos[turno];
+    var html = '';
+    if (root.Sala.necesitaAyuda(est)) {
+      html = '<p>⚠️ <strong>' + UI.esc(e.nombre) + '</strong> no tiene un dispositivo conectado.</p>' +
+        '<button class="btn btn-azul btn-chico" data-accion="forzar">🖥️ Jugar por este equipo</button>' +
+        (est.fase === 'turno' ? '<button class="btn btn-gris btn-chico" data-accion="saltar">⏭️ Saltar turno</button>' : '');
+    } else if (est.fase === 'turno' && !root.Sala.hostControla(turno)) {
+      html = '<p>📱 <strong>' + UI.esc(e.nombre) + '</strong> tira el dado desde su dispositivo.</p>';
+    }
+    aviso.innerHTML = html;
+    aviso.hidden = !html;
+  }
+
+  /** Lo llama sala.js cuando cambian equipos o conexiones. */
+  function refrescar() {
+    var est = app.estado;
+    if (!est || !$('#pantalla-juego').classList.contains('activa')) return;
+    render(est);
+    var m = app.modalActual;
+    if (m && m.esPregunta && m.setSoloLectura && est.preguntaActual && est.fase === 'pregunta') {
+      m.setSoloLectura(!root.Sala.hostControla(est.preguntaActual.equipo));
+    }
+  }
+
+  /**
+   * Acción recibida de un dispositivo (ya validada por sala.js como del dueño del equipo).
+   * Devuelve 'ok', 'ignorada' u 'ocupado' (reintentar más tarde).
+   */
+  function accionRemota(tipo, equipo, payload) {
+    var est = app.estado;
+    if (!est || est.fase === 'fin') return 'ignorada';
+    if (app.ocupado) return 'ocupado';
+    var turno = G.equipoDeTurno(est);
+    var m = app.modalActual;
+    switch (tipo) {
+      case 'tirar':
+        if (est.fase !== 'turno' || equipo !== turno) return 'ignorada';
+        return dispatch({ tipo: 'TIRAR_DADO' }) ? 'ok' : 'ignorada';
+      case 'relampago':
+        if (est.fase !== 'turno' || equipo !== turno) return 'ignorada';
+        return dispatch({ tipo: 'CANJEAR_RELAMPAGO' }) ? 'ok' : 'ignorada';
+      case 'responder': {
+        if (est.fase !== 'pregunta' || est.preguntaActual.equipo !== equipo) return 'ignorada';
+        if (!m || !m.esPregunta) return 'ocupado';
+        var op = Number(payload.opcion);
+        if (!(op >= -1 && op < est.preguntaActual.opciones.length)) return 'ignorada';
+        m.responder(op);
+        return 'ok';
+      }
+      case 'continuar':
+        if (est.fase !== 'resultado' || est.resultado.equipo !== equipo || est.resultado.pendienteCofre) return 'ignorada';
+        if (!m || !m.esResultado) return 'ocupado';
+        m.accion.continuar();
+        return 'ok';
+      case 'avance':
+        if (est.fase !== 'resultado' || est.resultado.equipo !== equipo || !est.resultado.pendienteCofre) return 'ignorada';
+        if (!m || !m.esResultado) return 'ocupado';
+        m.accion.avance();
+        return 'ok';
+      case 'ataque':
+        if (est.fase !== 'resultado' || est.resultado.equipo !== equipo || !est.resultado.pendienteCofre) return 'ignorada';
+        if ((est.resultado.rivales || []).indexOf(Number(payload.rival)) < 0) return 'ignorada';
+        if (!m || !m.esResultado) return 'ocupado';
+        m.accion.ataque(Number(payload.rival));
+        return 'ok';
+    }
+    return 'ignorada';
+  }
+
+  /** Monta la pantalla de juego a partir de un estado (inicio o recuperación). */
+  function montarJuego(est) {
+    UI.cerrarTodos();
+    UI.mostrarPantalla('juego');
+    $('#leyenda').innerHTML = UI.leyendaHTML();
+    $('#dado').innerHTML = UI.caraDado(est.dado || 1);
+    Tablero.montar($('#tablero-contenedor'), est);
+    render(est);
+  }
+
+  /** El anfitrión recarga la página: retoma la partida tal como estaba. */
+  function restaurar(est) {
+    app.estado = est;
+    app.ocupado = false;
+    app.modalActual = null;
+    // Para que "Jugar de nuevo" funcione después de recuperar la partida.
+    app.ultimaConfig = {
+      modo: est.config.modo,
+      etapa: est.config.etapa || 1,
+      tema: est.config.tema,
+      tiempo: est.config.tiempo,
+      equipos: est.equipos.map(function (e) { return { nombre: e.nombre, color: e.color, icono: e.icono }; }),
+      orden: est.orden.slice()
+    };
+    if (est.fase === 'fin') { UI.renderFin(est); mostrarFin(); return; }
+    montarJuego(est);
+    if (est.fase === 'pregunta') abrirPregunta(est);
+    else if (est.fase === 'resultado') abrirResultado(est);
+    else anunciarTurno(est);
+  }
+
+  function mostrarFin() {
+    var b = $('[data-accion="jugar-de-nuevo"]');
+    if (b) b.hidden = false;
+    UI.mostrarPantalla('fin');
   }
 
   function eventos(est, tipo) { return (est.eventos || []).filter(function (e) { return e.tipo === tipo; }); }
@@ -261,12 +390,13 @@
     try {
       switch (accion.tipo) {
         case 'INICIAR':
-          UI.cerrarTodos();
-          UI.mostrarPantalla('juego');
-          $('#leyenda').innerHTML = UI.leyendaHTML();
-          $('#dado').innerHTML = UI.caraDado(1);
-          Tablero.montar($('#tablero-contenedor'), est);
-          UI.renderJuego(est);
+          montarJuego(est);
+          anunciarTurno(est);
+          break;
+
+        case 'SALTAR_TURNO':
+          UI.toast('⏭️ Turno saltado', 'especial', 1500);
+          render(est);
           anunciarTurno(est);
           break;
 
@@ -276,7 +406,7 @@
           $('#dado-texto').textContent = '¡Salió ' + d.valor + '!';
           await animarMovimientos(est);
           Tablero.sincronizar(est, true);
-          UI.renderJuego(est);
+          render(est);
           if (est.fase === 'fin') { await terminar(est); return; }
           if (est.fase === 'pregunta') {
             var tipo = est.preguntaActual.tipo;
@@ -289,14 +419,14 @@
 
         case 'CANJEAR_RELAMPAGO':
           Audio.efecto('especial');
-          UI.renderJuego(est);
+          render(est);
           abrirPregunta(est);
           break;
 
         case 'RESPONDER': {
           await UI.feedbackPregunta(app.modalActual, est);
           var perdidas = eventos(est, 'vida').map(function (e) { return e.equipo; });
-          UI.renderJuego(est, { vidasPerdidas: perdidas });
+          render(est, { vidasPerdidas: perdidas });
           if (perdidas.length) Audio.efecto('vida');
           if (eventos(est, 'eliminado').length) setTimeout(function () { Audio.efecto('eliminado'); }, 350);
           if (app.modalActual) app.modalActual.cerrar();
@@ -318,7 +448,7 @@
 
         case 'CONTINUAR':
           Tablero.sincronizar(est, true);
-          UI.renderJuego(est);
+          render(est);
           if (est.fase === 'fin') { await terminar(est); return; }
           anunciarTurno(est);
           break;
@@ -338,9 +468,18 @@
   }
 
   function abrirPregunta(est) {
+    var op = {};
+    if (enLinea()) {
+      // Reloj del servidor (igual en todos los dispositivos) y, si el equipo tiene
+      // su propio dispositivo, la pregunta se muestra en modo solo lectura.
+      op.reloj = root.Sala.relojPregunta(est);
+      op.ahora = root.Sala.ahora;
+      op.gracia = 800;
+      op.soloLectura = !root.Sala.hostControla(est.preguntaActual.equipo);
+    }
     app.modalActual = UI.abrirPregunta(est, function (opcion) {
       dispatch({ tipo: 'RESPONDER', opcion: opcion });
-    });
+    }, op);
   }
 
   function abrirResultado(est) {
@@ -349,12 +488,16 @@
         var m = app.modalActual;
         if (m) m.cerrar();
         // Movimientos pendientes de la respuesta (retroceso por alerta, avance relámpago)
-        if (eventos(app.estado, 'respuesta').length) await animarMovimientos(app.estado);
+        if (eventos(app.estado, 'respuesta').length) {
+          app.ocupado = true;
+          await animarMovimientos(app.estado);
+          app.ocupado = false;
+        }
         dispatch({ tipo: 'CONTINUAR' });
       },
       avance: function () { dispatch({ tipo: 'COFRE_AVANCE' }); },
       ataque: function (rival) { dispatch({ tipo: 'COFRE_ATAQUE', rival: rival }); }
-    });
+    }, { controlCofre: !enLinea() || root.Sala.hostControla(est.resultado.equipo) });
   }
 
   async function terminar(est) {
@@ -364,12 +507,18 @@
     UI.confeti();
     await UI.esperar(UI.reducido() ? 200 : 1200);
     UI.renderFin(est);
-    UI.mostrarPantalla('fin');
+    mostrarFin();
   }
 
   async function salirPartida() {
-    var ok = await UI.confirmar({ titulo: '¿Salir de la partida?', texto: 'Se perderá el progreso de esta partida.', si: 'Salir', no: 'Seguir jugando', icono: '🏠' });
-    if (!ok) return;
+    if (enLinea()) {
+      var cerrar = await UI.confirmar({ titulo: '¿Cerrar la sala?', texto: 'La partida en línea terminará para todos los equipos.', si: 'Cerrar sala', no: 'Seguir jugando', icono: '🏠' });
+      if (!cerrar) return;
+      await root.Sala.cerrar();
+    } else {
+      var ok = await UI.confirmar({ titulo: '¿Salir de la partida?', texto: 'Se perderá el progreso de esta partida.', si: 'Salir', no: 'Seguir jugando', icono: '🏠' });
+      if (!ok) return;
+    }
     UI.detenerTemporizador();
     UI.cerrarTodos();
     app.estado = null;
@@ -386,7 +535,7 @@
     var escribiendo = tag === 'input' || tag === 'textarea' || tag === 'select';
     if (e.key === 'Escape' && m && m.cerrable) { m.cerrar(); return; }
     if (escribiendo) return;
-    if (m && m.esPregunta && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (m && m.esPregunta && !m.soloLectura && !e.ctrlKey && !e.metaKey && !e.altKey) {
       var mapa = { a: 0, b: 1, c: 2, d: 3, 1: 0, 2: 1, 3: 2, 4: 3 };
       var k = e.key.toLowerCase();
       if (k in mapa) { e.preventDefault(); m.responder(mapa[k]); }
@@ -466,13 +615,25 @@
           }
           break;
         case 'menu':
+          if (enLinea()) root.Sala.cerrar();
+          if (root.Sala && root.Sala.esJugador()) root.Sala.salir();
           app.estado = null;
           Tablero.desmontar();
           ir('portada');
           break;
+        // ----- Modo en línea -----
+        case 'online': root.Sala.abrir(); break;
+        case 'unirse-sala': root.Sala.abrir(''); break;
+        case 'volver-sala': root.Sala.abrir(t.dataset.codigo); root.Sala.unirse(t.dataset.codigo); break;
+        case 'forzar':
+          if (app.estado) root.Sala.forzar(G.equipoDeTurno(app.estado));
+          break;
+        case 'saltar':
+          if (!app.ocupado) dispatch({ tipo: 'SALTAR_TURNO' });
+          break;
       }
       if (t.dataset.n) setNEquipos(Number(t.dataset.n));
-      if (t.dataset.icono) {
+      if (t.dataset.icono && t.dataset.equipo !== undefined) {
         var i = Number(t.dataset.equipo);
         app.equipos[i].icono = t.dataset.icono;
         renderEquipos();
@@ -493,12 +654,26 @@
     root.addEventListener('resize', function () { Tablero.redimensionar(); });
   }
 
+  // Interfaz que usa sala.js (modo en línea) y que sirve para depurar.
+  root.LogiApp = {
+    dispatch: dispatch,
+    estado: function () { return app.estado; },
+    ir: ir,
+    comenzar: comenzar,
+    restaurar: restaurar,
+    accionRemota: accionRemota,
+    refrescar: refrescar,
+    bancoDe: bancoSegunModo,
+    temaDocente: function () { return root.Editor.obtener().tema; },
+    config: function () { return { modo: app.modo, etapa: app.etapa, tiempo: cfg.tiempo }; },
+    /** En el celular la música empieza apagada (sin guardar la preferencia). */
+    musicaSesion: function (si) { cfg.musica = !!si; aplicarCfg(); }
+  };
+
   cargarCfg();
   crearDecoracion();
   aplicarCfg();
   enlazar();
   UI.mostrarPantalla('portada');
-
-  // Expuesto para depuración y para la fase 2.
-  root.LogiApp = { dispatch: dispatch, estado: function () { return app.estado; } };
+  if (root.Sala) root.Sala.iniciar();
 })(window);
