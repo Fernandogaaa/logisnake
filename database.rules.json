@@ -1,0 +1,72 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".validate": "$code.matches(/^[A-HJ-NP-Z2-9]{5}$/)",
+        ".write": "auth != null && ((!data.exists() && newData.child('meta/hostUid').val() === auth.uid) || data.child('meta/hostUid').val() === auth.uid)",
+
+        "meta": {
+          ".read": "auth != null",
+          ".validate": "newData.hasChildren(['hostUid', 'createdAt', 'status'])",
+          "hostUid": { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+          "status": { ".validate": "newData.val() === 'lobby' || newData.val() === 'playing' || newData.val() === 'finished'" },
+          "modo": { ".validate": "newData.val() === 'integral' || newData.val() === 'etapa' || newData.val() === 'personalizado'" },
+          "tema": { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "nEquipos": { ".validate": "newData.isNumber() && newData.val() >= 2 && newData.val() <= 4" }
+        },
+
+        "teams": {
+          ".read": "auth != null",
+          "$teamId": {
+            ".validate": "$teamId.matches(/^t[0-3]$/) && newData.hasChildren(['name', 'color', 'icon'])",
+            ".write": "auth != null && data.exists() && (data.child('ownerUid').val() === auth.uid || (!data.child('ownerUid').exists() && newData.child('ownerUid').val() === auth.uid))",
+            "name": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24" },
+            "color": { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+            "icon": { ".validate": "newData.isString() && newData.val().length <= 8" },
+            "ownerUid": { ".validate": "newData.isString() && newData.val().length <= 128" },
+            "online": { ".validate": "newData.isBoolean()" },
+            "$otro": { ".validate": false }
+          }
+        },
+
+        "state": {
+          ".read": "auth != null",
+          "version": { ".validate": "newData.isNumber()" },
+          "datos": { ".validate": "newData.isString() && newData.val().length < 200000" },
+          "actualizado": { ".validate": "newData.isNumber()" }
+        },
+
+        "privado": {
+          ".read": "auth != null && root.child('rooms/' + $code + '/meta/hostUid').val() === auth.uid",
+          "datos": { ".validate": "newData.isString() && newData.val().length < 1000000" }
+        },
+
+        "actions": {
+          ".read": "auth != null && root.child('rooms/' + $code + '/meta/hostUid').val() === auth.uid",
+          "$actionId": {
+            ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid && root.child('rooms/' + $code + '/meta').exists()",
+            ".validate": "newData.hasChildren(['uid', 'type', 'ts'])",
+            "uid": { ".validate": "newData.isString()" },
+            "teamId": { ".validate": "newData.isString() && newData.val().matches(/^t[0-3]$/)" },
+            "type": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "payload": { ".validate": "newData.hasChildren() || newData.val() === null" },
+            "ts": { ".validate": "newData.isNumber() && newData.val() <= now + 60000" },
+            "$otro": { ".validate": false }
+          }
+        },
+
+        "presence": {
+          ".read": "auth != null",
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && root.child('rooms/' + $code + '/meta').exists()",
+            "rol": { ".validate": "newData.val() === 'host' || newData.val() === 'jugador'" },
+            "teamId": { ".validate": "newData.isString() && newData.val().matches(/^t[0-3]$/)" },
+            "online": { ".validate": "newData.isBoolean()" },
+            "lastSeen": { ".validate": "newData.isNumber()" },
+            "$otro": { ".validate": false }
+          }
+        }
+      }
+    }
+  }
+}
