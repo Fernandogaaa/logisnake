@@ -12,6 +12,7 @@
   'use strict';
 
   var ARCHIVOS_AUDIO = {
+    musica : 'logisnake.mp3'
     // musica: 'assets/audio/musica.mp3',
     // dado: 'assets/audio/dado.mp3',
     // paso: 'assets/audio/paso.mp3',
